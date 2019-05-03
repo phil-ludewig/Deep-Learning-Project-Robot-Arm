@@ -19,10 +19,10 @@ This project is based on the Nvidia open source example "jetson-reinforcement" d
 
 ## Results
 #### Environment Overview:
-![Overview](results/Images/Arm.jpg "ALT")
+![Overview](results/Images/Arm.png "ALT")
 
 #### RAW Camera DQ-Network Input:
-![RAWCamera](results/Images/CameraInput.jpg "ALT")
+![RAWCamera](results/Images/CameraInput.png "ALT")
 
 #### 90% Accuracy in Touching the Object ():
-![Progress](results/Images/Task1_TouchAny_BaseLocked_90%.png "ALT")
+![Progress](results/Images/Task1_TouchAny_BaseLocked_90percent.png "ALT")
