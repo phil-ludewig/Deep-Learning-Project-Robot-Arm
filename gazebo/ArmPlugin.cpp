@@ -24,11 +24,7 @@
 #define EPS_END 0.05f // min probability that arm takes random action
 #define EPS_DECAY 200 // incrementally discourage exploration (num of episodes?)
 
-/*
-/ TODO - Tune the following hyperparameters
-/
-*/
-// Modified from "catch" example
+// DQN Hyperparameters
 #define INPUT_WIDTH 64
 #define INPUT_HEIGHT 64
 #define OPTIMIZER "RMSprop"
@@ -37,11 +33,6 @@
 #define BATCH_SIZE 32
 #define USE_LSTM true
 #define LSTM_SIZE 256
-
-/*
-/ TODO - Define Reward Parameters
-/
-*/
 
 #define REWARD_WIN  1000.0f
 #define REWARD_LOSS -500.0f
@@ -65,7 +56,7 @@
 // Set Debug Mode
 #define DEBUG false
 
-// Lock base rotation DOF (Add dof in ArmPlugin.h file if false)
+// Lock robot arm base rotation DOF (Add extra dof in ArmPlugin.h file if false)
 #define LOCKBASE true
 
 
@@ -130,19 +121,13 @@ void ArmPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr /*_sdf*/)
 	// Create our node for camera communication
 	cameraNode->Init();
 
-	/*
-	/ TODO - Subscribe to camera topic - DONE
-	/
-	*/
+	// Subscribe to camera topic
 	cameraSub = cameraNode->Subscribe("/gazebo/arm_world/camera/link/camera/image", &ArmPlugin::onCameraMsg, this);
 
 	// Create our node for collision detection
 	collisionNode->Init();
 
-	/*
-	/ TODO - Subscribe to prop collision topic - DONE
-	/
-	*/
+	// Subscrive to gazebo collision topic
 	collisionSub = collisionNode->Subscribe("/gazebo/arm_world/tube/tube_link/my_contact", &ArmPlugin::onCollisionMsg, this);
 
 	// Listen to the update event. This event is broadcast every simulation iteration.
@@ -157,10 +142,7 @@ bool ArmPlugin::createAgent()
 		return true;
 
 
-	/*
-	/ TODO - Create DQN Agent
-	/
-	*/
+	// Create DQN Agent
   agent = dqnAgent::Create(INPUT_WIDTH, INPUT_HEIGHT, INPUT_CHANNELS, DOF*2,
   					        OPTIMIZER, LEARNING_RATE, REPLAY_MEMORY, BATCH_SIZE,
   					        GAMMA, EPS_START, EPS_END, EPS_DECAY,
@@ -173,7 +155,6 @@ bool ArmPlugin::createAgent()
 	}
 
 	// Allocate the python tensor for passing the camera state
-
 	inputState = Tensor::Alloc(INPUT_WIDTH, INPUT_HEIGHT, INPUT_CHANNELS);
 
 	if( !inputState )
@@ -255,10 +236,8 @@ void ArmPlugin::onCollisionMsg(ConstContactsPtr &contacts) // ConstContactsPtr r
 		if(DEBUG){std::cout << "Collision between[" << contacts->contact(i).collision1()
 			     << "] and [" << contacts->contact(i).collision2() << "]\n";}
 
-		/*
-		/ TODO - Check if there is collision between the arm and object, then issue learning reward - DONE
-		/
-		*/
+
+		// Check for collision between arm and target object, issue reward
 		if(GRIPPER_ONLY) // only gripper allowed to touch?
 		{
 			// check if collision partners are tube and gripper base
@@ -328,11 +307,6 @@ bool ArmPlugin::updateAgent()
 	// if the action is even, increase the joint position by the delta parameter
 	// if the action is odd,  decrease the joint position by the delta parameter
 
-	/*
-	/ TODO - Increase or decrease the joint velocity based on whether the action is even or odd - DONE
-	/
-	*/
-
   // Action 1 & 2 move joint 1, action 3 & 4 move joint 2 etc.
   // action/2 is integer and always rounds to the correct joint index
   int jointIndex = action/2;
@@ -366,10 +340,7 @@ bool ArmPlugin::updateAgent()
 
 #else // if using joint angle control
 
-	/*
-	/ TODO - Increase or decrease the joint position based on whether the action is even or odd - DONE
-	/
-	*/
+	// Increase or decrease the joint angle based on whether the action is even or odd
   int jointIndex = action/2; // see velocity control above for explanation
 	float joint = ref[jointIndex] + actionJointDelta * ((action % 2 == 0)? 1.0 : -1.0);
 
@@ -590,10 +561,8 @@ void ArmPlugin::OnUpdate(const common::UpdateInfo& updateInfo)
 		const math::Box& gripBBox = gripper->GetBoundingBox();
 		const float groundContact = 0.05f; // distToGround considered ground contact
 
-		/*
-		/ TODO - set appropriate Reward for robot hitting the ground. - DONE
-		/
-		*/
+
+		// Set reward for robot hitting ground
     // gripper touches ground, if min.z value of its bounding box touches, RND slack suggests that max.z is also relevant
     bool hasGroundContact = ((gripBBox.min.z <= groundContact || gripBBox.max.z <= groundContact) ? true : false);
 
@@ -606,12 +575,7 @@ void ArmPlugin::OnUpdate(const common::UpdateInfo& updateInfo)
 			endEpisode    = true;
 		}
 
-
-		/*
-		/ TODO - Issue an interim reward based on the distance to the object - DONE
-		/
-		*/
-
+		// Issue interim reward if arm moves closer/further away from target (based on euclidean)
 		if(!hasGroundContact)
 		{
 			const float distGoal = BoxDistance(gripBBox, propBBox); // compute the reward from distance to the goal
